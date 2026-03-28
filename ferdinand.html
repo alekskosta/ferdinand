@@ -242,6 +242,53 @@ for (let y = 0; y < H; y++) {
   }
 }
 
+// ─── Dirt paths ──────────────────────────────────────────────────────────────
+const dirtTiles = new Set();
+
+function generateDirtPath(startX, startY, angle, length) {
+  let x = startX, y = startY, dir = angle;
+  for (let i = 0; i < length; i++) {
+    dir += (Math.random() - 0.5) * 0.18;
+    x += Math.cos(dir) * 1.3;
+    y += Math.sin(dir) * 1.3;
+    for (let dy = 0; dy <= 1; dy++) {
+      for (let dx = 0; dx <= 1; dx++) {
+        const tx = Math.floor(x) + dx, ty = Math.floor(y) + dy;
+        if (tx >= 1 && ty >= 1 && tx < W - 1 && ty < H - 1) dirtTiles.add(`${tx},${ty}`);
+      }
+    }
+  }
+}
+
+generateDirtPath(10,    H / 2,        0,             180);
+generateDirtPath(W / 2, 10,           Math.PI / 2,   180);
+generateDirtPath(20,    20,           Math.PI / 4,   130);
+generateDirtPath(W - 20, 20,          Math.PI * 3/4, 130);
+generateDirtPath(W / 4,  H * 3/4,    -0.3,          110);
+
+// ─── Trees ───────────────────────────────────────────────────────────────────
+const trees = [];
+for (let i = 0; i < 200; i++) {
+  const tx = T * 3 + Math.random() * (W - 6) * T;
+  const ty = T * 3 + Math.random() * (H - 6) * T;
+  if (Math.hypot(tx - W * T / 2, ty - H * T / 2) < 220) continue;
+  if (dirtTiles.has(`${Math.floor(tx/T)},${Math.floor(ty/T)}`)) continue;
+  let tooClose = false;
+  for (const t of trees) { if (Math.hypot(t.x - tx, t.y - ty) < 80) { tooClose = true; break; } }
+  if (!tooClose) trees.push({ x: tx, y: ty });
+}
+
+// ─── Rocks ───────────────────────────────────────────────────────────────────
+const rocks = [];
+for (let i = 0; i < 250; i++) {
+  const rx = T + Math.random() * (W - 2) * T;
+  const ry = T + Math.random() * (H - 2) * T;
+  if (Math.hypot(rx - W * T / 2, ry - H * T / 2) < 160) continue;
+  let tooClose = false;
+  for (const t of trees) { if (Math.hypot(t.x - rx, t.y - ry) < 50) { tooClose = true; break; } }
+  if (!tooClose) rocks.push({ x: rx, y: ry, w: 10 + Math.floor(Math.random() * 14), h: 7 + Math.floor(Math.random() * 8) });
+}
+
 // ─── State ───────────────────────────────────────────────────────────────────
 const keys = {};
 document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
@@ -296,10 +343,9 @@ function spawnFlower() {
 
   if (fx < T || fy < T || fx > (W-1)*T || fy > (H-1)*T) return;
 
-  // Avoid clustering
-  for (const f of flowers) {
-    if (dist(f.x, f.y, fx, fy) < 35) return;
-  }
+  // Avoid clustering and trees
+  for (const f of flowers) { if (dist(f.x, f.y, fx, fy) < 35) return; }
+  for (const t of trees)   { if (dist(t.x, t.y, fx, fy) < 55) return; }
 
   flowers.push({
     x: fx, y: fy,
@@ -383,11 +429,17 @@ function update() {
   cam.x += (targetCX - cam.x) * 0.12;
   cam.y += (targetCY - cam.y) * 0.12;
 
-  // Flower spawning
+  // Flower spawning — scales with distance from spawn
+  const distFromSpawn = Math.hypot(player.x - W * T / 2, player.y - H * T / 2);
+  const distFactor = Math.min(2, 1 + distFromSpawn / 2000);
+  const maxFlowers = 120 + Math.floor(visited.size * 0.25);
+  const spawnInterval = Math.floor(220 / distFactor);
+
   flowerTimer++;
-  if (flowerTimer >= 90 && flowers.length < 120) {
+  if (flowerTimer >= spawnInterval && flowers.length < maxFlowers) {
     flowerTimer = 0;
-    spawnFlowerNearPath();
+    const batch = Math.ceil(distFactor);
+    for (let i = 0; i < batch; i++) spawnFlowerNearPath();
   }
 
   // Update flowers
@@ -492,6 +544,54 @@ function drawFlower(f) {
     ctx.fillRect(px - p.size/2, py - p.size/2, p.size, p.size);
   }
   ctx.globalAlpha = 1;
+}
+
+function drawDirtPaths() {
+  const sx = Math.max(0, Math.floor(cam.x / T));
+  const sy = Math.max(0, Math.floor(cam.y / T));
+  const ex = Math.min(W, Math.ceil((cam.x + canvas.width) / T) + 1);
+  const ey = Math.min(H, Math.ceil((cam.y + canvas.height) / T) + 1);
+  for (let ty = sy; ty < ey; ty++) {
+    for (let tx = sx; tx < ex; tx++) {
+      if (!dirtTiles.has(`${tx},${ty}`)) continue;
+      const px = tx * T - cam.x, py = ty * T - cam.y;
+      ctx.fillStyle = '#c8a478';
+      ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#a87e52';
+      ctx.fillRect(px, py + T - 3, T, 3);
+      ctx.fillRect(px + T - 3, py, 3, T);
+    }
+  }
+}
+
+function drawRock(r) {
+  const [sx, sy] = worldToScreen(r.x, r.y);
+  if (sx < -40 || sx > canvas.width + 40 || sy < -40 || sy > canvas.height + 40) return;
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillRect(sx - r.w/2 + 3, sy - r.h/2 + 5, r.w, r.h);
+  ctx.fillStyle = '#7a7a7a';
+  ctx.fillRect(sx - r.w/2, sy - r.h/2, r.w, r.h);
+  ctx.fillStyle = '#a0a0a0';
+  ctx.fillRect(sx - r.w/2 + 2, sy - r.h/2 + 2, Math.floor(r.w * 0.5), Math.floor(r.h * 0.4));
+  ctx.fillStyle = '#555';
+  ctx.fillRect(sx - r.w/2, sy + r.h/2 - 3, r.w, 3);
+}
+
+function drawTree(t) {
+  const [sx, sy] = worldToScreen(t.x, t.y);
+  if (sx < -70 || sx > canvas.width + 70 || sy < -70 || sy > canvas.height + 70) return;
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(sx - 20, sy + 10, 40, 12);
+  ctx.fillStyle = '#4a2810';
+  ctx.fillRect(sx - 5, sy - 8, 10, 22);
+  ctx.fillStyle = '#1a3d0a';
+  ctx.fillRect(sx - 22, sy - 42, 44, 36);
+  ctx.fillStyle = '#256614';
+  ctx.fillRect(sx - 17, sy - 56, 34, 20);
+  ctx.fillStyle = '#33881c';
+  ctx.fillRect(sx - 11, sy - 66, 22, 16);
+  ctx.fillStyle = '#44aa26';
+  ctx.fillRect(sx - 6, sy - 64, 7, 7);
 }
 
 function drawPlayer() {
@@ -625,15 +725,22 @@ function loop() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawTiles();
+  drawDirtPaths();
   drawPath();
 
-  // Sort flowers + player by Y for correct depth
-  const drawables = [...flowers.map(f => ({ type: 'flower', data: f, y: f.y })),
-                     { type: 'player', y: player.y }];
+  // Sort rocks, trees, flowers + player by Y for correct depth
+  const drawables = [
+    ...rocks.map(r   => ({ type: 'rock',   data: r, y: r.y })),
+    ...trees.map(t   => ({ type: 'tree',   data: t, y: t.y })),
+    ...flowers.map(f => ({ type: 'flower', data: f, y: f.y })),
+    { type: 'player', y: player.y },
+  ];
   drawables.sort((a, b) => a.y - b.y);
 
   for (const d of drawables) {
-    if (d.type === 'flower') drawFlower(d.data);
+    if      (d.type === 'rock')   drawRock(d.data);
+    else if (d.type === 'tree')   drawTree(d.data);
+    else if (d.type === 'flower') drawFlower(d.data);
     else drawPlayer();
   }
 
