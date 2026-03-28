@@ -181,6 +181,132 @@
     }
 
     #confirm-no:hover { background: #63a33b; }
+
+    #win-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+    }
+
+    #win-overlay.visible { display: flex; }
+
+    #win-box {
+      background: #1a2e10;
+      border: 4px solid #70b840;
+      border-radius: 8px;
+      padding: 36px 44px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      font-family: monospace;
+      color: #e8f5d0;
+      box-shadow: 0 0 0 2px #3d6b25, 0 8px 40px rgba(0,0,0,0.8);
+    }
+
+    #win-box h1 {
+      font-size: 1.8rem;
+      color: #ffee44;
+      text-shadow: 2px 2px 0 #5a4000;
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+    }
+
+    #win-box p {
+      font-size: 0.9rem;
+      color: #b0d880;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    #win-canvas {
+      display: block;
+      margin: 0 auto 24px;
+      image-rendering: pixelated;
+    }
+
+    #win-replay-btn {
+      background: #4e7d32;
+      color: #e8f5d0;
+      border: 3px solid #70b840;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 1.05rem;
+      font-weight: bold;
+      padding: 12px 36px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: background 0.1s, transform 0.1s;
+    }
+
+    #win-replay-btn:hover { background: #63a33b; transform: translateY(-2px); }
+    #win-replay-btn:active { transform: translateY(0); }
+
+    #gameover-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+    }
+
+    #gameover-overlay.visible { display: flex; }
+
+    #gameover-box {
+      background: #0e1a0e;
+      border: 4px solid #3a5a3a;
+      border-radius: 8px;
+      padding: 36px 44px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      font-family: monospace;
+      color: #c8d8c8;
+      box-shadow: 0 0 0 2px #1a2e1a, 0 8px 40px rgba(0,0,0,0.9);
+    }
+
+    #gameover-box h1 {
+      font-size: 1.8rem;
+      color: #8899aa;
+      text-shadow: 2px 2px 0 #111;
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+    }
+
+    #gameover-box p {
+      font-size: 0.9rem;
+      color: #7a9a8a;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    #gameover-canvas {
+      display: block;
+      margin: 0 auto 24px;
+      image-rendering: pixelated;
+    }
+
+    #gameover-retry-btn {
+      background: #2a3a2a;
+      color: #c8d8c8;
+      border: 3px solid #4a6a4a;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 1.05rem;
+      font-weight: bold;
+      padding: 12px 36px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: background 0.1s, transform 0.1s;
+    }
+
+    #gameover-retry-btn:hover { background: #3a4e3a; transform: translateY(-2px); }
+    #gameover-retry-btn:active { transform: translateY(0); }
   </style>
 </head>
 <body>
@@ -198,15 +324,35 @@
   </div>
 </div>
 
+<div id="gameover-overlay">
+  <div id="gameover-box">
+    <h1>Å nei...</h1>
+    <p>Ferdinand ble stukket, luktet på noe ekkelt<br>og ble gjennomvåt i regnet.<br><br>Stakkars blomsterentusiast. Prøv igjen?</p>
+    <canvas id="gameover-canvas" width="140" height="160"></canvas>
+    <br>
+    <button id="gameover-retry-btn">Prøv igjen</button>
+  </div>
+</div>
+
+<div id="win-overlay">
+  <div id="win-box">
+    <h1>Gratulerer!</h1>
+    <p>Ferdinand har luktet på alle blomstene<br>og er verdens lykkeligste blomsterentusiast!<br><br>Du klarte det — alle hjertene er fulle!</p>
+    <canvas id="win-canvas" width="140" height="160"></canvas>
+    <br>
+    <button id="win-replay-btn">Spill igjen</button>
+  </div>
+</div>
+
 <div id="modal-overlay">
   <div id="modal">
     <h1>Ferdinand</h1>
-    <p class="subtitle">En liten okse på blomsteroppdatering</p>
+    <p class="subtitle">En blomsterentusiast på vandring</p>
     <ul class="rules">
       <li>Gå rundt i verden og utforsk gresslettene</li>
       <li>Blomster dukker opp langs veien din</li>
       <li>Nær en blomst? Trykk <strong>E</strong> for å lukte på den</li>
-      <li>Jo mer du vandrer, jo flere blomster!</li>
+      <li>Pass deg for bier, skitne blomster og regnvær — finn ly under et tre!</li>
     </ul>
     <button id="start-btn">Start spillet</button>
   </div>
@@ -268,7 +414,7 @@ generateDirtPath(W / 4,  H * 3/4,    -0.3,          110);
 
 // ─── Trees ───────────────────────────────────────────────────────────────────
 const trees = [];
-for (let i = 0; i < 200; i++) {
+for (let i = 0; i < 320; i++) {
   const tx = T * 3 + Math.random() * (W - 6) * T;
   const ty = T * 3 + Math.random() * (H - 6) * T;
   if (Math.hypot(tx - W * T / 2, ty - H * T / 2) < 220) continue;
@@ -317,6 +463,22 @@ const floats = [];
 let frame = 0;
 let flowerTimer = 0;
 
+// Lives
+let lives = 3;
+let gameWon = false;
+
+// ─── Weather ─────────────────────────────────────────────────────────────────
+let weather = 'clear';      // 'clear' | 'warning' | 'rain'
+let weatherTimer = 1200 + Math.floor(Math.random() * 1200); // frames until next change
+let thunderFlash = 0;       // frames of white flash
+let rainDamageTimer = 0;    // frames until next rain damage tick
+
+const rainParticles = Array.from({ length: 180 }, () => ({
+  x: Math.random() * 4000,
+  y: Math.random() * 3000,
+  speed: 8 + Math.random() * 5,
+}));
+
 // ─── Flower colors ───────────────────────────────────────────────────────────
 const PETAL_COLORS = ['#ff3333','#ff9900','#cc33ff','#ff66aa','#ffffff','#3399ff'];
 
@@ -347,14 +509,62 @@ function spawnFlower() {
   for (const f of flowers) { if (dist(f.x, f.y, fx, fy) < 35) return; }
   for (const t of trees)   { if (dist(t.x, t.y, fx, fy) < 55) return; }
 
+  const dirty = Math.random() < 0.2;
+  const DIRTY_COLORS = ['#7a6010', '#8b6914', '#6b7a10', '#5a4a08'];
   flowers.push({
     x: fx, y: fy,
-    color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+    color: dirty ? DIRTY_COLORS[Math.floor(Math.random() * DIRTY_COLORS.length)] : PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+    dirty,
     sway: Math.random() * Math.PI * 2,
     swaySpeed: 0.03 + Math.random() * 0.02,
     bobble: 0,
     particles: [],
     smelled: false,
+    lifetime: 2400 + Math.floor(Math.random() * 1800),
+  });
+}
+
+// ─── Animals ─────────────────────────────────────────────────────────────────
+const ANIMAL_HAPPY = {
+  dog:   ['Voff!', 'Voff voff!', 'Wuf!'],
+  fox:   ['Hei!', 'Ring-ding!', 'Hihi!'],
+  sheep: ['Bæ!', 'Mæh!', 'Bæ bæ!'],
+  bird:  ['Kvitter!', 'Pip pip!', 'Tweet!'],
+};
+
+const animals = [];
+(function initAnimals() {
+  animals.length = 0;
+  const counts = { dog: 7, fox: 5, sheep: 9, bird: 12 };
+  for (const [type, count] of Object.entries(counts)) {
+    let placed = 0, tries = 0;
+    while (placed < count && tries++ < 2000) {
+      const x = T * 4 + Math.random() * (W - 8) * T;
+      const y = T * 4 + Math.random() * (H - 8) * T;
+      if (Math.hypot(x - W * T / 2, y - H * T / 2) < 350) continue;
+      animals.push({
+        x, y, type,
+        dir: Math.random() * Math.PI * 2,
+        speed: type === 'bird' ? 0.9 : type === 'fox' ? 0.55 : 0.35,
+        walkFrame: 0, walkTick: 0,
+        changeTimer: Math.floor(Math.random() * 120) + 60,
+        pauseTimer: Math.floor(Math.random() * 80),
+        happy: 0, happyCooldown: 0,
+        particles: [],
+      });
+      placed++;
+    }
+  }
+})();
+
+// ─── Bees ────────────────────────────────────────────────────────────────────
+const bees = [];
+for (let i = 0; i < 35; i++) {
+  bees.push({
+    x: T * 2 + Math.random() * (W - 4) * T,
+    y: T * 2 + Math.random() * (H - 4) * T,
+    dir: Math.random() * Math.PI * 2,
+    wobble: Math.random() * Math.PI * 2,
   });
 }
 
@@ -363,9 +573,10 @@ const SMELL_WORDS = ['Mmmm!', 'Herlig!', 'Så fint!', 'Nydelig!', 'Aaah!'];
 
 function trySmell() {
   for (const f of flowers) {
-    if (dist(player.x, player.y, f.x, f.y) < 48) {
+    if (!f.dying && dist(player.x, player.y, f.x, f.y) < 48) {
       f.bobble = 40;
       f.smelled = true;
+      f.dying = true;
       // Particles
       for (let i = 0; i < 10; i++) {
         const a = (i / 10) * Math.PI * 2;
@@ -377,12 +588,29 @@ function trySmell() {
           size: 4 + Math.floor(Math.random() * 3),
         });
       }
-      floats.push({
-        x: f.x, y: f.y - 30,
-        text: SMELL_WORDS[Math.floor(Math.random() * SMELL_WORDS.length)],
-        life: 1,
-      });
+      if (f.dirty) {
+        lives = Math.max(0, lives - 0.25);
+        floats.push({ x: f.x, y: f.y - 30, text: ['Pøøøh!', 'Bleæsj!', 'Æsj!'][Math.floor(Math.random() * 3)], life: 1 });
+      } else {
+        lives = Math.min(20, lives + 0.25);
+        floats.push({ x: f.x, y: f.y - 30, text: SMELL_WORDS[Math.floor(Math.random() * SMELL_WORDS.length)], life: 1 });
+      }
       return; // smell one at a time
+    }
+  }
+
+  // Greet nearby animal
+  for (const a of animals) {
+    if (a.happyCooldown === 0 && dist(player.x, player.y, a.x, a.y) < 52) {
+      a.happy = 60;
+      a.happyCooldown = 150;
+      const words = ANIMAL_HAPPY[a.type];
+      floats.push({ x: a.x, y: a.y - 20, text: words[Math.floor(Math.random() * words.length)], life: 1 });
+      for (let i = 0; i < 8; i++) {
+        const ang = (i / 8) * Math.PI * 2;
+        a.particles.push({ x: a.x, y: a.y, vx: Math.cos(ang) * (0.8 + Math.random()), vy: Math.sin(ang) * (0.8 + Math.random()) - 0.5, life: 1, color: '#ffdd44', size: 4 });
+      }
+      return;
     }
   }
 }
@@ -446,6 +674,7 @@ function update() {
   for (const f of flowers) {
     f.sway += f.swaySpeed;
     if (f.bobble > 0) f.bobble--;
+    if (!f.dying) { f.lifetime--; if (f.lifetime <= 0) f.dying = true; }
 
     // Particles
     for (const p of f.particles) {
@@ -456,6 +685,7 @@ function update() {
     }
     f.particles = f.particles.filter(p => p.life > 0);
   }
+  flowers.splice(0, flowers.length, ...flowers.filter(f => !(f.dying && f.particles.length === 0 && f.bobble === 0)));
 
   // Update floats
   for (const t of floats) {
@@ -463,6 +693,108 @@ function update() {
     t.life -= 0.012;
   }
   floats.splice(0, floats.length, ...floats.filter(t => t.life > 0));
+
+  updateAnimals();
+
+  // Bees
+  for (const b of bees) {
+    b.dir += (Math.random() - 0.5) * 0.25;
+    b.wobble += 0.15;
+    b.x += Math.cos(b.dir) * 1.4;
+    b.y += Math.sin(b.dir) * 1.4 + Math.sin(b.wobble) * 0.4;
+    b.x = Math.max(T, Math.min((W-1)*T, b.x));
+    b.y = Math.max(T, Math.min((H-1)*T, b.y));
+    if (dist(player.x, player.y, b.x, b.y) < 28) {
+      lives = Math.max(0, lives - 0.25);
+      floats.push({ x: b.x, y: b.y - 20, text: 'Au!', life: 1 });
+      b.x = -9999; // remove by pushing offscreen, filtered below
+    }
+  }
+  bees.splice(0, bees.length, ...bees.filter(b => b.x > -9000));
+
+  // ─── Weather update ───────────────────────────────────────────────────────
+  if (thunderFlash > 0) thunderFlash--;
+
+  weatherTimer--;
+  if (weatherTimer <= 0) {
+    if (weather === 'clear') {
+      weather = 'warning';
+      weatherTimer = 120;
+      thunderFlash = 8;
+    } else if (weather === 'warning') {
+      weather = 'rain';
+      weatherTimer = 900 + Math.floor(Math.random() * 900);
+      rainDamageTimer = 200;
+    } else {
+      weather = 'clear';
+      weatherTimer = 1400 + Math.floor(Math.random() * 1400);
+    }
+  }
+
+  if (weather === 'warning' && weatherTimer % 40 === 0) thunderFlash = 6;
+
+  if (weather === 'rain') {
+    // Move rain particles
+    for (const p of rainParticles) {
+      p.x += 1.5;
+      p.y += p.speed;
+      if (p.y > canvas.height + 20) { p.y = -10; p.x = Math.random() * canvas.width; }
+      if (p.x > canvas.width + 20)  { p.x = -10; p.y = Math.random() * canvas.height; }
+    }
+
+    // Rain damage if not sheltered under a tree
+    rainDamageTimer--;
+    if (rainDamageTimer <= 0) {
+      rainDamageTimer = 200;
+      const sheltered = trees.some(t => dist(player.x, player.y, t.x, t.y) < 55);
+      if (!sheltered) {
+        lives = Math.max(0, lives - 0.25);
+        floats.push({ x: player.x, y: player.y - 30, text: 'Brr!', life: 1 });
+      }
+    }
+  }
+
+  // Game over check
+  if (!gameWon && lives <= 0) {
+    gamePaused = true;
+    document.getElementById('gameover-overlay').classList.add('visible');
+    drawGameOverCharacter();
+  }
+
+  // Win check
+  if (!gameWon && lives >= 20) {
+    gameWon = true;
+    gamePaused = true;
+    document.getElementById('win-overlay').classList.add('visible');
+    drawWinCharacter();
+  }
+}
+
+function updateAnimals() {
+  for (const a of animals) {
+    if (a.happy > 0) a.happy--;
+    if (a.happyCooldown > 0) a.happyCooldown--;
+    for (const p of a.particles) { p.x += p.vx; p.y += p.vy; p.vy -= 0.05; p.life -= 0.03; }
+    a.particles = a.particles.filter(p => p.life > 0);
+
+    if (a.pauseTimer > 0) { a.pauseTimer--; a.walkFrame = 0; continue; }
+
+    a.changeTimer--;
+    if (a.changeTimer <= 0) {
+      if (Math.random() < 0.35) a.pauseTimer = 60 + Math.floor(Math.random() * 100);
+      else a.dir += (Math.random() - 0.5) * Math.PI * 1.2;
+      a.changeTimer = 70 + Math.floor(Math.random() * 130);
+    }
+
+    const nx = a.x + Math.cos(a.dir) * a.speed;
+    const ny = a.y + Math.sin(a.dir) * a.speed;
+    if (nx < T * 2 || nx > (W - 2) * T) { a.dir = Math.PI - a.dir; }
+    else if (ny < T * 2 || ny > (H - 2) * T) { a.dir = -a.dir; }
+    else { a.x = nx; a.y = ny; }
+
+    a.walkTick++;
+    if (a.walkTick > (a.type === 'bird' ? 5 : 10)) { a.walkTick = 0; a.walkFrame = (a.walkFrame + 1) % 4; }
+  }
 }
 
 function spawnFlowerNearPath() {
@@ -514,6 +846,7 @@ function drawFlower(f) {
   const sway = Math.sin(f.sway) * 2;
   const bob = f.bobble > 0 ? Math.sin(frame * 0.4) * 4 : 0;
   const sy = sy0 + bob;
+  ctx.globalAlpha = f.smelled ? 1 : Math.min(1, f.lifetime / 120);
 
   // Stem
   ctx.fillStyle = '#2e7d1e';
@@ -526,15 +859,26 @@ function drawFlower(f) {
   ctx.fillRect(sx - 8 + sway, sy - 4,  6, 6);
   ctx.fillRect(sx + 2 + sway, sy - 4,  6, 6);
 
-  // Center
-  ctx.fillStyle = '#ffee44';
+  // Center — dirty flowers get brown center, normal get yellow
+  ctx.fillStyle = f.dirty ? '#5a3a08' : '#ffee44';
   ctx.fillRect(sx - 4 + sway, sy - 8, 8, 8);
+
+  // Dirty stink dots
+  if (f.dirty) {
+    ctx.fillStyle = '#6b4f0a';
+    const stinkOff = Math.sin(frame * 0.08) * 2;
+    ctx.fillRect(sx - 1 + sway, sy - 18 + stinkOff, 3, 3);
+    ctx.fillRect(sx + 4 + sway, sy - 22 + stinkOff * 0.7, 3, 3);
+    ctx.fillRect(sx - 5 + sway, sy - 24 + stinkOff * 1.3, 3, 3);
+  }
 
   // Smelled sparkle dot
   if (f.smelled && f.bobble > 0) {
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.fillRect(sx - 2 + sway, sy - 16, 4, 4);
   }
+
+  ctx.globalAlpha = 1;
 
   // Particles
   for (const p of f.particles) {
@@ -544,6 +888,181 @@ function drawFlower(f) {
     ctx.fillRect(px - p.size/2, py - p.size/2, p.size, p.size);
   }
   ctx.globalAlpha = 1;
+}
+
+function drawAnimal(a) {
+  const [sx, sy0] = worldToScreen(a.x, a.y);
+  if (sx < -60 || sx > canvas.width + 60 || sy0 < -60 || sy0 > canvas.height + 60) return;
+
+  const bob = a.happy > 0 ? Math.sin(frame * 0.5) * 3 : 0;
+  const sy = sy0 + bob;
+  const leg = a.walkFrame % 2 === 0 ? 1 : -1;
+  const flip = Math.cos(a.dir) < 0;
+
+  ctx.save();
+  ctx.translate(sx, sy);
+  if (flip) ctx.scale(-1, 1);
+
+  if      (a.type === 'dog')   drawDogBody(leg);
+  else if (a.type === 'fox')   drawFoxBody(leg);
+  else if (a.type === 'sheep') drawSheepBody(leg);
+  else if (a.type === 'bird')  drawBirdBody(leg);
+
+  ctx.restore();
+
+  for (const p of a.particles) {
+    const [px, py] = worldToScreen(p.x, p.y);
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(px - p.size / 2, py - p.size / 2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawDogBody(leg) {
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(-10, 2, 20, 6);
+  // Tail
+  ctx.fillStyle = '#8b5e3c';
+  ctx.fillRect(8, -14, 4, 8);
+  ctx.fillRect(10, -18, 4, 6);
+  // Legs
+  ctx.fillStyle = '#6b3f1e';
+  ctx.fillRect(-8, 0, 4, 6 + leg);
+  ctx.fillRect(-2, 0, 4, 6 - leg);
+  ctx.fillRect(3,  0, 4, 6 + leg);
+  ctx.fillRect(8,  0, 4, 6 - leg);  // Body
+  ctx.fillStyle = '#a0713a';
+  ctx.fillRect(-10, -12, 22, 14);
+  // Head
+  ctx.fillStyle = '#c08040';
+  ctx.fillRect(-4, -22, 14, 12);
+  // Ears (floppy)
+  ctx.fillStyle = '#7a4820';
+  ctx.fillRect(-6, -22, 5, 8);
+  ctx.fillRect(9,  -22, 5, 8);
+  // Eye
+  ctx.fillStyle = '#222';
+  ctx.fillRect(5, -18, 3, 3);
+  // Nose
+  ctx.fillStyle = '#222';
+  ctx.fillRect(8, -14, 4, 3);
+}
+
+function drawFoxBody(leg) {
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(-10, 2, 20, 6);
+  // Tail
+  ctx.fillStyle = '#d4621a';
+  ctx.fillRect(8, -16, 5, 10);
+  ctx.fillRect(10, -20, 4, 6);
+  ctx.fillStyle = '#f0f0e0';
+  ctx.fillRect(10, -14, 4, 5);
+  // Legs
+  ctx.fillStyle = '#b04a10';
+  ctx.fillRect(-8, 0, 4, 6 + leg);
+  ctx.fillRect(-2, 0, 4, 6 - leg);
+  ctx.fillRect(3,  0, 4, 6 + leg);
+  ctx.fillRect(8,  0, 4, 6 - leg);
+  // Body
+  ctx.fillStyle = '#e06820';
+  ctx.fillRect(-10, -12, 22, 14);
+  // White belly
+  ctx.fillStyle = '#f0ede0';
+  ctx.fillRect(-4, -10, 10, 10);
+  // Head
+  ctx.fillStyle = '#e07030';
+  ctx.fillRect(-4, -22, 14, 12);
+  // Pointed ears
+  ctx.fillStyle = '#c05010';
+  ctx.fillRect(-5, -28, 5, 8);
+  ctx.fillRect(9,  -28, 5, 8);
+  // Eye
+  ctx.fillStyle = '#222';
+  ctx.fillRect(5, -18, 3, 3);
+  // Snout
+  ctx.fillStyle = '#f0ede0';
+  ctx.fillRect(7, -16, 6, 5);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(10, -14, 3, 2);
+}
+
+function drawSheepBody(leg) {
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(-13, 3, 26, 7);
+  // Legs (dark)
+  ctx.fillStyle = '#333';
+  ctx.fillRect(-9, 0, 4, 7 + leg);
+  ctx.fillRect(-2, 0, 4, 7 - leg);
+  ctx.fillRect(5,  0, 4, 7 + leg);
+  ctx.fillRect(11, 0, 4, 7 - leg);
+  // Fluffy body (white with texture)
+  ctx.fillStyle = '#e8e8e8';
+  ctx.fillRect(-12, -14, 26, 16);
+  ctx.fillStyle = '#f8f8f8';
+  ctx.fillRect(-10, -18, 8, 6);
+  ctx.fillRect(0,   -19, 8, 7);
+  ctx.fillRect(8,   -17, 7, 5);
+  ctx.fillRect(-12, -16, 5, 5);
+  // Head
+  ctx.fillStyle = '#555';
+  ctx.fillRect(-14, -22, 10, 10);
+  // Ear
+  ctx.fillStyle = '#444';
+  ctx.fillRect(-16, -20, 4, 6);
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(-11, -20, 3, 3);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(-11, -19, 2, 2);
+}
+
+function drawBirdBody(leg) {
+  ctx.fillStyle = 'rgba(0,0,0,0.1)';
+  ctx.fillRect(-6, 1, 14, 4);
+  // Tail
+  ctx.fillStyle = '#2244aa';
+  ctx.fillRect(-8, -5, 4, 4);
+  // Wing flap
+  const wingOff = leg > 0 ? -2 : 0;
+  ctx.fillStyle = '#4466cc';
+  ctx.fillRect(-6, -10 + wingOff, 6, 4);
+  // Body
+  ctx.fillStyle = '#3355bb';
+  ctx.fillRect(-5, -12, 12, 10);
+  // Head
+  ctx.fillStyle = '#2244aa';
+  ctx.fillRect(2, -18, 8, 7);
+  // Beak
+  ctx.fillStyle = '#ffaa00';
+  ctx.fillRect(10, -15, 5, 3);
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(5, -16, 3, 3);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(6, -15, 2, 2);
+}
+
+function drawBee(b) {
+  const [sx, sy] = worldToScreen(b.x, b.y);
+  if (sx < -20 || sx > canvas.width + 20 || sy < -20 || sy > canvas.height + 20) return;
+  const wingOff = Math.sin(frame * 0.6) * 3;
+  // Wings
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = '#cceeff';
+  ctx.fillRect(sx - 7, sy - 8 - wingOff, 5, 4);
+  ctx.fillRect(sx + 2, sy - 8 - wingOff, 5, 4);
+  ctx.globalAlpha = 1;
+  // Body stripes
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillRect(sx - 4, sy - 6, 8, 8);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(sx - 4, sy - 4, 8, 2);
+  ctx.fillRect(sx - 4, sy,     8, 2);
+  // Stinger
+  ctx.fillStyle = '#555';
+  ctx.fillRect(sx - 1, sy + 2, 2, 3);
 }
 
 function drawDirtPaths() {
@@ -677,10 +1196,14 @@ function drawHUD() {
   ctx.fillText('WASD – beveg deg', 22, canvas.height - 38);
   ctx.fillText('E – lukt på blomst', 22, canvas.height - 20);
 
-  // Near-flower hint
-  const nearFlower = flowers.find(f => dist(player.x, player.y, f.x, f.y) < 48);
-  if (nearFlower) {
-    const hw = 190, hh = 38;
+  drawWeatherHUD();
+
+  // Near-flower / near-animal hint
+  const nearFlower = flowers.find(f => !f.dying && dist(player.x, player.y, f.x, f.y) < 48);
+  const nearAnimal = !nearFlower && animals.find(a => a.happyCooldown === 0 && dist(player.x, player.y, a.x, a.y) < 52);
+  const hint = nearFlower ? '🌸  Trykk E for å lukte!' : nearAnimal ? '🐾  Trykk E for å hilse!' : null;
+  if (hint) {
+    const hw = 210, hh = 38;
     const hx = canvas.width / 2 - hw / 2;
     const hy = canvas.height - 80;
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -689,17 +1212,287 @@ function drawHUD() {
     ctx.fillStyle = '#ffe066';
     ctx.font = 'bold 16px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('🌸  Trykk E for å lukte!', canvas.width / 2, hy + 25);
+    ctx.fillText(hint, canvas.width / 2, hy + 25);
   }
 
-  // Flower count
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
-  roundRect(canvas.width - 150, 12, 138, 36, 4);
+  // Lives — pixel hearts (2 rows of 5)
+  const hCols = 10, hRows = 2, hSpacing = 26, hS = 4;
+  const boxW = hCols * hSpacing + 8, boxH = hRows * (hS * 5 + 6) + 8;
+  const boxX = canvas.width - boxW - 12, boxY = 12;
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  roundRect(boxX, boxY, boxW, boxH, 4);
   ctx.fill();
-  ctx.fillStyle = '#ddd';
-  ctx.font = '14px monospace';
-  ctx.textAlign = 'right';
-  ctx.fillText(`Blomster: ${flowers.length}`, canvas.width - 22, 36);
+
+  for (let i = 0; i < 20; i++) {
+    const col = i % hCols, row = Math.floor(i / hCols);
+    const hx = boxX + 4 + col * hSpacing;
+    const hy = boxY + 4 + row * (hS * 5 + 6);
+    const fraction = Math.min(1, Math.max(0, lives - i));
+    drawHeart(hx, hy, fraction);
+  }
+}
+
+function drawHeart(x, y, fraction) {
+  const s = 4;
+  const shape = [
+    [0,1,0,1,0],
+    [1,1,1,1,1],
+    [1,1,1,1,1],
+    [0,1,1,1,0],
+    [0,0,1,0,0],
+  ];
+
+  // Empty heart
+  for (let row = 0; row < shape.length; row++) {
+    for (let col = 0; col < shape[row].length; col++) {
+      if (!shape[row][col]) continue;
+      ctx.fillStyle = '#553040';
+      ctx.fillRect(x + col * s, y + row * s, s, s);
+    }
+  }
+
+  if (fraction <= 0) return;
+
+  // Filled portion — clip left-to-right based on fraction
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, Math.round(fraction * 5 * s), 5 * s);
+  ctx.clip();
+  for (let row = 0; row < shape.length; row++) {
+    for (let col = 0; col < shape[row].length; col++) {
+      if (!shape[row][col]) continue;
+      const isHighlight = row === 0 || (row === 1 && (col === 0 || col === 4));
+      ctx.fillStyle = isHighlight ? '#ff6070' : '#e03040';
+      ctx.fillRect(x + col * s, y + row * s, s, s);
+    }
+  }
+  ctx.restore();
+}
+
+function drawWinCharacter() {
+  const wc = document.getElementById('win-canvas');
+  const c = wc.getContext('2d');
+  c.clearRect(0, 0, wc.width, wc.height);
+
+  const cx = 70, cy = 110;
+
+  // Shadow
+  c.fillStyle = 'rgba(0,0,0,0.15)';
+  c.fillRect(cx - 14, cy + 10, 28, 8);
+
+  // Legs
+  c.fillStyle = '#1a2f8a';
+  c.fillRect(cx - 8, cy, 6, 12);
+  c.fillRect(cx + 2, cy, 6, 12);
+
+  // Body
+  c.fillStyle = '#3a6bc4';
+  c.fillRect(cx - 10, cy - 12, 20, 14);
+
+  // Arms raised up in victory
+  c.fillStyle = '#3a6bc4';
+  c.fillRect(cx - 20, cy - 24, 6, 12);
+  c.fillRect(cx + 14, cy - 24, 6, 12);
+
+  // Hands
+  c.fillStyle = '#f5c987';
+  c.fillRect(cx - 20, cy - 30, 6, 6);
+  c.fillRect(cx + 14, cy - 30, 6, 6);
+
+  // Head
+  c.fillStyle = '#f5c987';
+  c.fillRect(cx - 10, cy - 28, 20, 16);
+
+  // Hair
+  c.fillStyle = '#6b3a1f';
+  c.fillRect(cx - 10, cy - 28, 20, 5);
+
+  // Big smile — eyes curved up (happy)
+  c.fillStyle = '#222';
+  c.fillRect(cx - 5, cy - 20, 3, 3);
+  c.fillRect(cx + 2, cy - 20, 3, 3);
+  // Smile dots
+  c.fillRect(cx - 6, cy - 14, 3, 2);
+  c.fillRect(cx - 2, cy - 13, 4, 3);
+  c.fillRect(cx + 3, cy - 14, 3, 2);
+
+  // Rosy cheeks
+  c.fillStyle = 'rgba(255,120,120,0.4)';
+  c.fillRect(cx - 9, cy - 16, 4, 3);
+  c.fillRect(cx + 5, cy - 16, 4, 3);
+
+  // Small flowers around character
+  const flowerPositions = [
+    { x: 18, y: 90, col: '#ff3333' },
+    { x: 112, y: 85, col: '#cc33ff' },
+    { x: 28, y: 130, col: '#ff9900' },
+    { x: 105, y: 125, col: '#ff66aa' },
+    { x: 62, y: 148, col: '#3399ff' },
+  ];
+  for (const fp of flowerPositions) {
+    c.fillStyle = '#2e7d1e';
+    c.fillRect(fp.x - 1, fp.y - 1, 3, 10);
+    c.fillStyle = fp.col;
+    c.fillRect(fp.x - 5, fp.y - 8, 4, 4);
+    c.fillRect(fp.x + 2, fp.y - 8, 4, 4);
+    c.fillRect(fp.x - 5, fp.y - 4, 4, 4);
+    c.fillRect(fp.x + 2, fp.y - 4, 4, 4);
+    c.fillStyle = '#ffee44';
+    c.fillRect(fp.x - 2, fp.y - 6, 5, 5);
+  }
+
+  // Sparkle stars
+  c.fillStyle = '#ffee44';
+  [[20, 30], [110, 40], [35, 60], [100, 55], [65, 20]].forEach(([sx, sy]) => {
+    c.fillRect(sx - 1, sy - 4, 3, 8);
+    c.fillRect(sx - 4, sy - 1, 8, 3);
+  });
+}
+
+function drawGameOverCharacter() {
+  const wc = document.getElementById('gameover-canvas');
+  const c = wc.getContext('2d');
+  c.clearRect(0, 0, wc.width, wc.height);
+
+  const cx = 70, cy = 110;
+
+  // Rain streaks
+  c.strokeStyle = 'rgba(120,160,220,0.5)';
+  c.lineWidth = 1.5;
+  c.beginPath();
+  [[25,10],[45,5],[65,15],[85,8],[105,12],[30,40],[55,35],[80,42],[100,38],[20,70],[50,65],[75,72],[110,68]].forEach(([x,y]) => {
+    c.moveTo(x, y); c.lineTo(x - 2, y + 14);
+  });
+  c.stroke();
+
+  // Shadow
+  c.fillStyle = 'rgba(0,0,0,0.12)';
+  c.fillRect(cx - 14, cy + 10, 28, 8);
+
+  // Legs — closer together, slumped
+  c.fillStyle = '#1a2f8a';
+  c.fillRect(cx - 6, cy, 6, 10);
+  c.fillRect(cx + 1, cy, 6, 10);
+
+  // Body
+  c.fillStyle = '#2a4a8a';
+  c.fillRect(cx - 10, cy - 12, 20, 14);
+
+  // Arms drooping down sadly
+  c.fillStyle = '#2a4a8a';
+  c.fillRect(cx - 18, cy - 6, 6, 12);
+  c.fillRect(cx + 12, cy - 6, 6, 12);
+
+  // Head
+  c.fillStyle = '#d4a870';
+  c.fillRect(cx - 10, cy - 28, 20, 16);
+
+  // Hair (wet, darker)
+  c.fillStyle = '#3a1a08';
+  c.fillRect(cx - 10, cy - 28, 20, 5);
+
+  // Sad eyes — small, downward
+  c.fillStyle = '#222';
+  c.fillRect(cx - 5, cy - 19, 3, 2);
+  c.fillRect(cx + 2, cy - 19, 3, 2);
+  // Eyebrows sad angle
+  c.fillStyle = '#333';
+  c.fillRect(cx - 6, cy - 22, 2, 2);
+  c.fillRect(cx + 4, cy - 22, 2, 2);
+  // Frown
+  c.fillStyle = '#222';
+  c.fillRect(cx - 4, cy - 13, 2, 2);
+  c.fillRect(cx - 2, cy - 12, 4, 2);
+  c.fillRect(cx + 2, cy - 13, 2, 2);
+
+  // Tear drop
+  c.fillStyle = '#88bbee';
+  c.fillRect(cx - 4, cy - 16, 2, 4);
+  c.fillRect(cx + 5, cy - 15, 2, 3);
+
+  // Dirty flowers (brownish) around feet
+  const dirtyFlowers = [
+    { x: 18, y: 125, col: '#6b5010' },
+    { x: 108, y: 120, col: '#7a6014' },
+    { x: 35, y: 148, col: '#5a4008' },
+    { x: 95, y: 143, col: '#6b5010' },
+  ];
+  for (const fp of dirtyFlowers) {
+    c.fillStyle = '#1e5010';
+    c.fillRect(fp.x - 1, fp.y - 1, 3, 10);
+    c.fillStyle = fp.col;
+    c.fillRect(fp.x - 5, fp.y - 8, 4, 4);
+    c.fillRect(fp.x + 2, fp.y - 8, 4, 4);
+    c.fillRect(fp.x - 5, fp.y - 4, 4, 4);
+    c.fillRect(fp.x + 2, fp.y - 4, 4, 4);
+    c.fillStyle = '#4a3508';
+    c.fillRect(fp.x - 2, fp.y - 6, 5, 5);
+    // stink dots
+    c.fillStyle = '#5a4010';
+    c.fillRect(fp.x, fp.y - 14, 2, 2);
+    c.fillRect(fp.x + 3, fp.y - 16, 2, 2);
+  }
+
+  // Small bees nearby
+  [[22, 55], [108, 62], [58, 20]].forEach(([bx, by]) => {
+    c.fillStyle = 'rgba(180,220,255,0.6)';
+    c.fillRect(bx - 5, by - 5, 4, 3);
+    c.fillRect(bx + 1, by - 5, 4, 3);
+    c.fillStyle = '#ffcc00';
+    c.fillRect(bx - 3, by - 3, 6, 6);
+    c.fillStyle = '#222';
+    c.fillRect(bx - 3, by - 1, 6, 2);
+    c.fillRect(bx - 3, by + 2, 6, 1);
+  });
+}
+
+function drawWeather() {
+  // Thunder flash
+  if (thunderFlash > 0) {
+    ctx.fillStyle = `rgba(255,255,220,${thunderFlash * 0.07})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  if (weather === 'warning') {
+    ctx.fillStyle = 'rgba(60,60,80,0.18)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  if (weather === 'rain') {
+    // Dark sky overlay
+    ctx.fillStyle = 'rgba(30,40,70,0.35)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Rain streaks
+    ctx.strokeStyle = 'rgba(160,200,255,0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (const p of rainParticles) {
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - 3, p.y - 12);
+    }
+    ctx.stroke();
+  }
+}
+
+function drawWeatherHUD() {
+  if (weather === 'clear') return;
+
+  const sheltered = weather === 'rain' && trees.some(t => dist(player.x, player.y, t.x, t.y) < 55);
+  const isWarning = weather === 'warning';
+  const msg = isWarning ? '⚡  Tordenvær på vei!' : sheltered ? '🌲  Du er i ly!' : '🌧  Finn ly under et tre!';
+  const color = isWarning ? '#ffe066' : sheltered ? '#88ee88' : '#66aaff';
+
+  const hw = 240, hh = 38;
+  const hx = canvas.width / 2 - hw / 2;
+  const hy = 60;
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  roundRect(hx, hy, hw, hh, 5);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.font = 'bold 15px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(msg, canvas.width / 2, hy + 25);
 }
 
 function roundRect(x, y, w, h, r) {
@@ -733,6 +1526,8 @@ function loop() {
     ...rocks.map(r   => ({ type: 'rock',   data: r, y: r.y })),
     ...trees.map(t   => ({ type: 'tree',   data: t, y: t.y })),
     ...flowers.map(f => ({ type: 'flower', data: f, y: f.y })),
+    ...animals.map(a => ({ type: 'animal', data: a, y: a.y })),
+    ...bees.map(b    => ({ type: 'bee',    data: b, y: b.y })),
     { type: 'player', y: player.y },
   ];
   drawables.sort((a, b) => a.y - b.y);
@@ -741,10 +1536,13 @@ function loop() {
     if      (d.type === 'rock')   drawRock(d.data);
     else if (d.type === 'tree')   drawTree(d.data);
     else if (d.type === 'flower') drawFlower(d.data);
+    else if (d.type === 'animal') drawAnimal(d.data);
+    else if (d.type === 'bee')    drawBee(d.data);
     else drawPlayer();
   }
 
   drawFloats();
+  drawWeather();
   drawHUD();
 
   requestAnimationFrame(loop);
@@ -764,6 +1562,7 @@ for (let i = 0; i < 12; i++) {
     sway: Math.random() * Math.PI * 2,
     swaySpeed: 0.03 + Math.random() * 0.02,
     bobble: 0, particles: [], smelled: false,
+    lifetime: 2400 + Math.floor(Math.random() * 1800),
   });
 }
 
@@ -807,6 +1606,11 @@ document.getElementById('confirm-yes').addEventListener('click', () => {
   floats.length = 0;
   frame = 0;
   flowerTimer = 0;
+  lives = 3;
+  weather = 'clear';
+  weatherTimer = 1200 + Math.floor(Math.random() * 1200);
+  thunderFlash = 0;
+  gameWon = false;
   for (const k of Object.keys(keys)) keys[k] = false;
 
   for (let i = 0; i < 12; i++) {
@@ -817,9 +1621,46 @@ document.getElementById('confirm-yes').addEventListener('click', () => {
       sway: Math.random() * Math.PI * 2,
       swaySpeed: 0.03 + Math.random() * 0.02,
       bobble: 0, particles: [], smelled: false,
+      lifetime: 2400 + Math.floor(Math.random() * 1800),
     });
   }
 
+  overlay.style.display = 'flex';
+});
+
+function resetGame() {
+  player.x = W * T / 2; player.y = H * T / 2;
+  player.dir = 0; player.walkFrame = 0; player.walkTick = 0;
+  cam.x = player.x - canvas.width / 2;
+  cam.y = player.y - canvas.height / 2;
+  visited.clear(); flowers.length = 0; floats.length = 0;
+  frame = 0; flowerTimer = 0; lives = 3;
+  weather = 'clear'; weatherTimer = 1200 + Math.floor(Math.random() * 1200); thunderFlash = 0;
+  gameWon = false;
+  for (const k of Object.keys(keys)) keys[k] = false;
+  for (let i = 0; i < 12; i++) {
+    flowers.push({
+      x: W * T / 2 + (Math.random() - 0.5) * 400,
+      y: H * T / 2 + (Math.random() - 0.5) * 400,
+      color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+      sway: Math.random() * Math.PI * 2, swaySpeed: 0.03 + Math.random() * 0.02,
+      bobble: 0, particles: [], smelled: false,
+      lifetime: 2400 + Math.floor(Math.random() * 1800), dirty: false,
+    });
+  }
+}
+
+document.getElementById('gameover-retry-btn').addEventListener('click', () => {
+  document.getElementById('gameover-overlay').classList.remove('visible');
+  menuBtn.style.display = 'none';
+  resetGame();
+  overlay.style.display = 'flex';
+});
+
+document.getElementById('win-replay-btn').addEventListener('click', () => {
+  document.getElementById('win-overlay').classList.remove('visible');
+  menuBtn.style.display = 'none';
+  resetGame();
   overlay.style.display = 'flex';
 });
 </script>
