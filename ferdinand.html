@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <title>Ferdinand</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; }
+    canvas { display: block; image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+const T = 32;            // tile size
+const W = 200, H = 200;  // world in tiles
+const PLAYER_SPEED = 2.5;
+
+// ─── Grass tile map ──────────────────────────────────────────────────────────
+// Each cell: 0-5 shade index
+const GRASS = [
+  '#5a8c3a','#4e7d32','#63a33b','#4a7226','#70b840','#3d6b25'
+];
+const GRASS_DARK = [
+  '#3d6b25','#3a6020','#4a7c2a','#344f1a','#538a2e','#2c4d18'
+];
+
+const map = [];
+// Simple noise-ish variation using sin
+for (let y = 0; y < H; y++) {
+  map[y] = [];
+  for (let x = 0; x < W; x++) {
+    const n = Math.sin(x * 0.3) * Math.cos(y * 0.25) +
+              Math.sin(x * 0.7 + 1.3) * Math.cos(y * 0.6 + 0.7);
+    map[y][x] = Math.abs(Math.floor(((n + 2) / 4) * 6)) % 6;
+  }
+}
+
+// ─── State ───────────────────────────────────────────────────────────────────
+const keys = {};
+document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+document.addEventListener('keyup',   e => { keys[e.key.toLowerCase()] = false; });
+
+const player = {
+  x: W * T / 2,
+  y: H * T / 2,
+  dir: 0,       // radians, 0 = right
+  walkFrame: 0,
+  walkTick: 0,
+};
+
+const cam = { x: 0, y: 0 };
+
+// Visited tiles: Set of "x,y" strings
+const visited = new Set();
+
+// Flowers array
+const flowers = [];
+
+// Floating text
+const floats = [];
+
+// Frame counter
+let frame = 0;
+let flowerTimer = 0;
+
+// ─── Flower colors ───────────────────────────────────────────────────────────
+const PETAL_COLORS = ['#ff3333','#ff9900','#cc33ff','#ff66aa','#ffffff','#3399ff'];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function dist(ax, ay, bx, by) {
+  return Math.hypot(ax - bx, ay - by);
+}
+
+function worldToScreen(wx, wy) {
+  return [wx - cam.x, wy - cam.y];
+}
+
+// ─── Spawn flower ─────────────────────────────────────────────────────────────
+function spawnFlower() {
+  if (visited.size === 0) return;
+  const arr = Array.from(visited);
+  const tile = arr[Math.floor(Math.random() * arr.length)];
+  const [tx, ty] = tile.split(',').map(Number);
+
+  const angle = Math.random() * Math.PI * 2;
+  const d = 2.5 + Math.random() * 4;
+  const fx = (tx + Math.cos(angle) * d) * T + T / 2;
+  const fy = (ty + Math.sin(angle) * d) * T + T / 2;
+
+  if (fx < T || fy < T || fx > (W-1)*T || fy > (H-1)*T) return;
+
+  // Avoid clustering
+  for (const f of flowers) {
+    if (dist(f.x, f.y, fx, fy) < 35) return;
+  }
+
+  flowers.push({
+    x: fx, y: fy,
+    color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+    sway: Math.random() * Math.PI * 2,
+    swaySpeed: 0.03 + Math.random() * 0.02,
+    bobble: 0,
+    particles: [],
+    smelled: false,
+  });
+}
+
+// ─── Smell ───────────────────────────────────────────────────────────────────
+const SMELL_WORDS = ['Mmmm!', 'Herlig!', 'Så fint!', 'Nydelig!', 'Aaah!'];
+
+function trySmell() {
+  for (const f of flowers) {
+    if (dist(player.x, player.y, f.x, f.y) < 48) {
+      f.bobble = 40;
+      f.smelled = true;
+      // Particles
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2;
+        f.particles.push({
+          x: f.x, y: f.y,
+          vx: Math.cos(a) * (1 + Math.random() * 1.5),
+          vy: Math.sin(a) * (1 + Math.random() * 1.5) - 0.5,
+          life: 1, color: f.color,
+          size: 4 + Math.floor(Math.random() * 3),
+        });
+      }
+      floats.push({
+        x: f.x, y: f.y - 30,
+        text: SMELL_WORDS[Math.floor(Math.random() * SMELL_WORDS.length)],
+        life: 1,
+      });
+      return; // smell one at a time
+    }
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'e') trySmell();
+});
+
+// ─── Update ──────────────────────────────────────────────────────────────────
+function update() {
+  frame++;
+
+  // Input
+  let dx = 0, dy = 0;
+  if (keys['w'] || keys['arrowup'])    dy -= 1;
+  if (keys['s'] || keys['arrowdown'])  dy += 1;
+  if (keys['a'] || keys['arrowleft'])  dx -= 1;
+  if (keys['d'] || keys['arrowright']) dx += 1;
+
+  const moving = dx !== 0 || dy !== 0;
+
+  if (moving) {
+    const len = Math.hypot(dx, dy);
+    dx = dx / len * PLAYER_SPEED;
+    dy = dy / len * PLAYER_SPEED;
+    player.dir = Math.atan2(dy, dx);
+
+    player.x = Math.max(T, Math.min((W-1)*T, player.x + dx));
+    player.y = Math.max(T, Math.min((H-1)*T, player.y + dy));
+
+    player.walkTick++;
+    if (player.walkTick > 8) { player.walkTick = 0; player.walkFrame = (player.walkFrame + 1) % 4; }
+
+    const tx = Math.floor(player.x / T);
+    const ty = Math.floor(player.y / T);
+    visited.add(`${tx},${ty}`);
+  } else {
+    player.walkFrame = 0;
+  }
+
+  // Camera – smooth follow
+  const targetCX = player.x - canvas.width / 2;
+  const targetCY = player.y - canvas.height / 2;
+  cam.x += (targetCX - cam.x) * 0.12;
+  cam.y += (targetCY - cam.y) * 0.12;
+
+  // Flower spawning
+  flowerTimer++;
+  if (flowerTimer >= 90 && flowers.length < 120) {
+    flowerTimer = 0;
+    spawnFlowerNearPath();
+  }
+
+  // Update flowers
+  for (const f of flowers) {
+    f.sway += f.swaySpeed;
+    if (f.bobble > 0) f.bobble--;
+
+    // Particles
+    for (const p of f.particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy -= 0.06;
+      p.life -= 0.025;
+    }
+    f.particles = f.particles.filter(p => p.life > 0);
+  }
+
+  // Update floats
+  for (const t of floats) {
+    t.y -= 0.6;
+    t.life -= 0.012;
+  }
+  floats.splice(0, floats.length, ...floats.filter(t => t.life > 0));
+}
+
+function spawnFlowerNearPath() {
+  // Spawn a flower near a random visited tile, slightly off-path
+  spawnFlower();
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+function drawTiles() {
+  const sx = Math.max(0, Math.floor(cam.x / T));
+  const sy = Math.max(0, Math.floor(cam.y / T));
+  const ex = Math.min(W, Math.ceil((cam.x + canvas.width) / T) + 1);
+  const ey = Math.min(H, Math.ceil((cam.y + canvas.height) / T) + 1);
+
+  for (let ty = sy; ty < ey; ty++) {
+    for (let tx = sx; tx < ex; tx++) {
+      const shade = map[ty][tx];
+      const px = tx * T - cam.x;
+      const py = ty * T - cam.y;
+
+      ctx.fillStyle = GRASS[shade];
+      ctx.fillRect(px, py, T, T);
+
+      // Darker bottom + right edge (Minecraft block feel)
+      ctx.fillStyle = GRASS_DARK[shade];
+      ctx.fillRect(px, py + T - 3, T, 3);
+      ctx.fillRect(px + T - 3, py, 3, T);
+    }
+  }
+}
+
+function drawPath() {
+  ctx.fillStyle = 'rgba(120, 90, 50, 0.28)';
+  for (const key of visited) {
+    const [tx, ty] = key.split(',').map(Number);
+    const px = tx * T - cam.x + 3;
+    const py = ty * T - cam.y + 3;
+    if (px > -T && px < canvas.width + T && py > -T && py < canvas.height + T) {
+      ctx.fillRect(px, py, T - 6, T - 6);
+    }
+  }
+}
+
+function drawFlower(f) {
+  const [sx, sy0] = worldToScreen(f.x, f.y);
+
+  if (sx < -30 || sx > canvas.width + 30 || sy0 < -30 || sy0 > canvas.height + 30) return;
+
+  const sway = Math.sin(f.sway) * 2;
+  const bob = f.bobble > 0 ? Math.sin(frame * 0.4) * 4 : 0;
+  const sy = sy0 + bob;
+
+  // Stem
+  ctx.fillStyle = '#2e7d1e';
+  ctx.fillRect(sx - 2 + sway, sy - 2, 4, 14);
+
+  // 4 petals (blocky)
+  ctx.fillStyle = f.color;
+  ctx.fillRect(sx - 8 + sway, sy - 10, 6, 6);
+  ctx.fillRect(sx + 2 + sway, sy - 10, 6, 6);
+  ctx.fillRect(sx - 8 + sway, sy - 4,  6, 6);
+  ctx.fillRect(sx + 2 + sway, sy - 4,  6, 6);
+
+  // Center
+  ctx.fillStyle = '#ffee44';
+  ctx.fillRect(sx - 4 + sway, sy - 8, 8, 8);
+
+  // Smelled sparkle dot
+  if (f.smelled && f.bobble > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillRect(sx - 2 + sway, sy - 16, 4, 4);
+  }
+
+  // Particles
+  for (const p of f.particles) {
+    const [px, py] = worldToScreen(p.x, p.y);
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(px - p.size/2, py - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawPlayer() {
+  const [sx, sy] = worldToScreen(player.x, player.y);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(sx - 12, sy + 8, 24, 8);
+
+  // Leg animation offset
+  const legSwing = player.walkFrame % 2 === 0 ? 2 : -2;
+
+  // Legs (blocky)
+  ctx.fillStyle = '#1a2f8a';
+  ctx.fillRect(sx - 8, sy + 2, 6, 10 + legSwing);
+  ctx.fillRect(sx + 2, sy + 2, 6, 10 - legSwing);
+
+  // Body
+  ctx.fillStyle = '#3a6bc4';
+  ctx.fillRect(sx - 10, sy - 8, 20, 12);
+
+  // Arms
+  ctx.fillStyle = '#3a6bc4';
+  const armSwing = player.walkFrame % 2 === 0 ? -2 : 2;
+  ctx.fillRect(sx - 16, sy - 8 + armSwing, 6, 10);
+  ctx.fillRect(sx + 10, sy - 8 - armSwing, 6, 10);
+
+  // Head
+  ctx.fillStyle = '#f5c987';
+  ctx.fillRect(sx - 10, sy - 22, 20, 16);
+
+  // Hair
+  ctx.fillStyle = '#6b3a1f';
+  ctx.fillRect(sx - 10, sy - 22, 20, 5);
+
+  // Eyes – oriented towards direction
+  const ex = Math.cos(player.dir) * 4;
+  const ey = Math.sin(player.dir) * 4;
+  ctx.fillStyle = '#222';
+  ctx.fillRect(sx - 5 + ex - 2, sy - 14 + ey - 2, 3, 3);
+  ctx.fillRect(sx + 2 + ex - 2, sy - 14 + ey - 2, 3, 3);
+
+  // Direction indicator (small dot at feet)
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.fillRect(
+    sx + Math.cos(player.dir) * 10 - 2,
+    sy + Math.sin(player.dir) * 10 + 4,
+    4, 4
+  );
+}
+
+function drawFloats() {
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 18px monospace';
+  for (const t of floats) {
+    const [sx, sy] = worldToScreen(t.x, t.y);
+    ctx.globalAlpha = t.life;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.strokeText(t.text, sx, sy);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(t.text, sx, sy);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawHUD() {
+  // Title box
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  roundRect(12, 12, 170, 36, 4);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('Ferdinand', 28, 36);
+
+  // Controls
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  roundRect(12, canvas.height - 60, 220, 46, 4);
+  ctx.fill();
+  ctx.fillStyle = '#ddd';
+  ctx.font = '13px monospace';
+  ctx.fillText('WASD – beveg deg', 22, canvas.height - 38);
+  ctx.fillText('E – lukt på blomst', 22, canvas.height - 20);
+
+  // Near-flower hint
+  const nearFlower = flowers.find(f => dist(player.x, player.y, f.x, f.y) < 48);
+  if (nearFlower) {
+    const hw = 190, hh = 38;
+    const hx = canvas.width / 2 - hw / 2;
+    const hy = canvas.height - 80;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    roundRect(hx, hy, hw, hh, 5);
+    ctx.fill();
+    ctx.fillStyle = '#ffe066';
+    ctx.font = 'bold 16px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('🌸  Trykk E for å lukte!', canvas.width / 2, hy + 25);
+  }
+
+  // Flower count
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  roundRect(canvas.width - 150, 12, 138, 36, 4);
+  ctx.fill();
+  ctx.fillStyle = '#ddd';
+  ctx.font = '14px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(`Blomster: ${flowers.length}`, canvas.width - 22, 36);
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+// ─── Game loop ────────────────────────────────────────────────────────────────
+function loop() {
+  update();
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawTiles();
+  drawPath();
+
+  // Sort flowers + player by Y for correct depth
+  const drawables = [...flowers.map(f => ({ type: 'flower', data: f, y: f.y })),
+                     { type: 'player', y: player.y }];
+  drawables.sort((a, b) => a.y - b.y);
+
+  for (const d of drawables) {
+    if (d.type === 'flower') drawFlower(d.data);
+    else drawPlayer();
+  }
+
+  drawFloats();
+  drawHUD();
+
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+// Spawn a few flowers at start so the world isn't empty
+for (let i = 0; i < 12; i++) {
+  flowers.push({
+    x: W * T / 2 + (Math.random() - 0.5) * 400,
+    y: H * T / 2 + (Math.random() - 0.5) * 400,
+    color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+    sway: Math.random() * Math.PI * 2,
+    swaySpeed: 0.03 + Math.random() * 0.02,
+    bobble: 0, particles: [], smelled: false,
+  });
+}
+
+loop();
+</script>
+</body>
+</html>
