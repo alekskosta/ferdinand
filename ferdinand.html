@@ -7,10 +7,210 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #000; overflow: hidden; }
     canvas { display: block; image-rendering: pixelated; }
+
+    #modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    #modal {
+      background: #1a2e10;
+      border: 4px solid #5a8c3a;
+      border-radius: 6px;
+      padding: 36px 40px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      font-family: monospace;
+      color: #e8f5d0;
+      box-shadow: 0 0 0 2px #3d6b25, 0 8px 32px rgba(0,0,0,0.7);
+    }
+
+    #modal h1 {
+      font-size: 2rem;
+      color: #70b840;
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 0 #2c4d18;
+    }
+
+    #modal .subtitle {
+      font-size: 0.85rem;
+      color: #a0c870;
+      margin-bottom: 24px;
+    }
+
+    #modal .rules {
+      text-align: left;
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      font-size: 0.9rem;
+      line-height: 2;
+    }
+
+    #modal .rules li {
+      list-style: none;
+    }
+
+    #modal .rules li::before {
+      content: '▸ ';
+      color: #70b840;
+    }
+
+    #start-btn {
+      background: #4e7d32;
+      color: #e8f5d0;
+      border: 3px solid #70b840;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 12px 40px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: background 0.1s, transform 0.1s;
+    }
+
+    #start-btn:hover {
+      background: #63a33b;
+      transform: translateY(-2px);
+    }
+
+    #start-btn:active {
+      transform: translateY(0);
+    }
+
+    #menu-btn {
+      position: fixed;
+      bottom: 14px;
+      right: 14px;
+      background: rgba(0,0,0,0.45);
+      color: #ddd;
+      border: 2px solid #5a8c3a;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      padding: 6px 14px;
+      cursor: pointer;
+      z-index: 5;
+      display: none;
+    }
+
+    #menu-btn:hover {
+      background: rgba(90,140,58,0.35);
+      color: #fff;
+    }
+
+    #confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    #confirm-overlay.visible {
+      display: flex;
+    }
+
+    #confirm-box {
+      background: #1a2e10;
+      border: 4px solid #5a8c3a;
+      border-radius: 6px;
+      padding: 30px 36px;
+      max-width: 340px;
+      width: 90%;
+      text-align: center;
+      font-family: monospace;
+      color: #e8f5d0;
+      box-shadow: 0 0 0 2px #3d6b25, 0 8px 32px rgba(0,0,0,0.7);
+    }
+
+    #confirm-box h2 {
+      font-size: 1.2rem;
+      color: #70b840;
+      margin-bottom: 10px;
+    }
+
+    #confirm-box p {
+      font-size: 0.85rem;
+      color: #a0c870;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .confirm-btns {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .confirm-btns button {
+      font-family: monospace;
+      font-size: 1rem;
+      font-weight: bold;
+      padding: 10px 32px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.1s, transform 0.1s;
+    }
+
+    .confirm-btns button:active { transform: translateY(1px); }
+
+    #confirm-yes {
+      background: #7a2020;
+      color: #ffd0d0;
+      border: 3px solid #c04040;
+    }
+
+    #confirm-yes:hover { background: #9e2a2a; }
+
+    #confirm-no {
+      background: #4e7d32;
+      color: #e8f5d0;
+      border: 3px solid #70b840;
+    }
+
+    #confirm-no:hover { background: #63a33b; }
   </style>
 </head>
 <body>
 <canvas id="game"></canvas>
+<button id="menu-btn">Avslutt</button>
+
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <h2>Avslutt spillet?</h2>
+    <p>Du mister alle poengene dine og<br>fremgangen din vil ikke bli lagret.</p>
+    <div class="confirm-btns">
+      <button id="confirm-yes">Ja</button>
+      <button id="confirm-no">Nei</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-overlay">
+  <div id="modal">
+    <h1>Ferdinand</h1>
+    <p class="subtitle">En liten okse på blomsteroppdatering</p>
+    <ul class="rules">
+      <li>Gå rundt i verden og utforsk gresslettene</li>
+      <li>Blomster dukker opp langs veien din</li>
+      <li>Nær en blomst? Trykk <strong>E</strong> for å lukte på den</li>
+      <li>Jo mer du vandrer, jo flere blomster!</li>
+    </ul>
+    <button id="start-btn">Start spillet</button>
+  </div>
+</div>
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -417,7 +617,10 @@ function roundRect(x, y, w, h, r) {
 }
 
 // ─── Game loop ────────────────────────────────────────────────────────────────
+let gamePaused = false;
+
 function loop() {
+  if (gamePaused) return;
   update();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -457,7 +660,61 @@ for (let i = 0; i < 12; i++) {
   });
 }
 
-loop();
+const overlay = document.getElementById('modal-overlay');
+const menuBtn = document.getElementById('menu-btn');
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  overlay.style.display = 'none';
+  menuBtn.style.display = 'block';
+  gamePaused = false;
+  loop();
+});
+
+const confirmOverlay = document.getElementById('confirm-overlay');
+
+menuBtn.addEventListener('click', () => {
+  gamePaused = true;
+  confirmOverlay.classList.add('visible');
+});
+
+document.getElementById('confirm-no').addEventListener('click', () => {
+  confirmOverlay.classList.remove('visible');
+  gamePaused = false;
+  loop();
+});
+
+document.getElementById('confirm-yes').addEventListener('click', () => {
+  confirmOverlay.classList.remove('visible');
+  menuBtn.style.display = 'none';
+
+  // Reset game state
+  player.x = W * T / 2;
+  player.y = H * T / 2;
+  player.dir = 0;
+  player.walkFrame = 0;
+  player.walkTick = 0;
+  cam.x = player.x - canvas.width / 2;
+  cam.y = player.y - canvas.height / 2;
+  visited.clear();
+  flowers.length = 0;
+  floats.length = 0;
+  frame = 0;
+  flowerTimer = 0;
+  for (const k of Object.keys(keys)) keys[k] = false;
+
+  for (let i = 0; i < 12; i++) {
+    flowers.push({
+      x: W * T / 2 + (Math.random() - 0.5) * 400,
+      y: H * T / 2 + (Math.random() - 0.5) * 400,
+      color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+      sway: Math.random() * Math.PI * 2,
+      swaySpeed: 0.03 + Math.random() * 0.02,
+      bobble: 0, particles: [], smelled: false,
+    });
+  }
+
+  overlay.style.display = 'flex';
+});
 </script>
 </body>
 </html>
