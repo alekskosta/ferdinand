@@ -1612,12 +1612,34 @@ for (let i = 0; i < 12; i++) {
 const overlay = document.getElementById('modal-overlay');
 const menuBtn = document.getElementById('menu-btn');
 
-// ─── Intro music ─────────────────────────────────────────────────────────────
+// ─── Music ───────────────────────────────────────────────────────────────────
 const introAudio = new Audio('public/intro.wav');
 introAudio.loop = true;
 
+const explorerAudio = new Audio('public/explorer.wav');
+explorerAudio.loop = true;
+explorerAudio.volume = 0;
+
+function fadeAudio(audio, targetVol, duration, onDone) {
+  const steps = 40;
+  const interval = duration / steps;
+  const startVol = audio.volume;
+  const delta = (targetVol - startVol) / steps;
+  let step = 0;
+  const t = setInterval(() => {
+    step++;
+    audio.volume = Math.max(0, Math.min(1, startVol + delta * step));
+    if (step >= steps) {
+      clearInterval(t);
+      audio.volume = targetVol;
+      if (onDone) onDone();
+    }
+  }, interval);
+}
+
 function playIntro() {
   introAudio.currentTime = 0;
+  introAudio.volume = 1;
   introAudio.play().catch(() => {});
 }
 
@@ -1627,23 +1649,25 @@ function stopIntro() {
 }
 
 function fadeOutIntroAndStart(callback) {
-  const duration = 600; // ms
-  const steps = 30;
-  const interval = duration / steps;
-  let step = 0;
-  const startVol = introAudio.volume;
+  const duration = 700;
   overlay.style.transition = `opacity ${duration}ms ease`;
   overlay.style.opacity = '0';
-  const fade = setInterval(() => {
-    step++;
-    introAudio.volume = Math.max(0, startVol * (1 - step / steps));
-    if (step >= steps) {
-      clearInterval(fade);
-      stopIntro();
-      introAudio.volume = 1;
-      callback();
-    }
-  }, interval);
+  // Fade out intro, fade in explorer simultaneously
+  explorerAudio.volume = 0;
+  explorerAudio.play().catch(() => {});
+  fadeAudio(introAudio, 0, duration, () => {
+    stopIntro();
+    introAudio.volume = 1;
+    callback();
+  });
+  fadeAudio(explorerAudio, 1, duration, null);
+}
+
+function fadeOutExplorerToIntro() {
+  fadeAudio(explorerAudio, 0, 700, () => {
+    explorerAudio.pause();
+    explorerAudio.currentTime = 0;
+  });
 }
 
 // "Klikk for å starte"-skjerm sikrer at lyd alltid kan spilles
@@ -1713,6 +1737,7 @@ document.getElementById('confirm-yes').addEventListener('click', () => {
     });
   }
 
+  fadeOutExplorerToIntro();
   overlay.style.display = 'flex';
   playIntro();
 });
@@ -1743,6 +1768,7 @@ document.getElementById('gameover-retry-btn').addEventListener('click', () => {
   document.getElementById('gameover-overlay').classList.remove('visible');
   menuBtn.style.display = 'none';
   resetGame();
+  fadeOutExplorerToIntro();
   overlay.style.display = 'flex';
   playIntro();
 });
@@ -1751,6 +1777,7 @@ document.getElementById('win-replay-btn').addEventListener('click', () => {
   document.getElementById('win-overlay').classList.remove('visible');
   menuBtn.style.display = 'none';
   resetGame();
+  fadeOutExplorerToIntro();
   overlay.style.display = 'flex';
   playIntro();
 });
