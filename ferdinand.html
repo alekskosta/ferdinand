@@ -1626,6 +1626,26 @@ function stopIntro() {
   introAudio.currentTime = 0;
 }
 
+function fadeOutIntroAndStart(callback) {
+  const duration = 600; // ms
+  const steps = 30;
+  const interval = duration / steps;
+  let step = 0;
+  const startVol = introAudio.volume;
+  overlay.style.transition = `opacity ${duration}ms ease`;
+  overlay.style.opacity = '0';
+  const fade = setInterval(() => {
+    step++;
+    introAudio.volume = Math.max(0, startVol * (1 - step / steps));
+    if (step >= steps) {
+      clearInterval(fade);
+      stopIntro();
+      introAudio.volume = 1;
+      callback();
+    }
+  }, interval);
+}
+
 // "Klikk for å starte"-skjerm sikrer at lyd alltid kan spilles
 const clickToStart = document.getElementById('click-to-start');
 clickToStart.addEventListener('click', () => {
@@ -1634,11 +1654,14 @@ clickToStart.addEventListener('click', () => {
 }, { once: true });
 
 document.getElementById('start-btn').addEventListener('click', () => {
-  stopIntro();
-  overlay.style.display = 'none';
-  menuBtn.style.display = 'block';
-  gamePaused = false;
-  loop();
+  fadeOutIntroAndStart(() => {
+    overlay.style.display = 'none';
+    overlay.style.opacity = '1';
+    overlay.style.transition = '';
+    menuBtn.style.display = 'block';
+    gamePaused = false;
+    loop();
+  });
 });
 
 const confirmOverlay = document.getElementById('confirm-overlay');
