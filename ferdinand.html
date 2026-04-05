@@ -812,6 +812,12 @@ function update() {
     gamePaused = true;
     document.getElementById('gameover-overlay').classList.add('visible');
     drawGameOverCharacter();
+    fadeAudio(explorerAudio, 0, 800, null);
+    fadeAudio(rainAudio, 0, 800, null);
+    loosingAudio.currentTime = 0;
+    loosingAudio.volume = 0;
+    loosingAudio.play().catch(() => {});
+    fadeAudio(loosingAudio, 1, 800, null);
   }
 
   // Win check
@@ -820,6 +826,12 @@ function update() {
     gamePaused = true;
     document.getElementById('win-overlay').classList.add('visible');
     drawWinCharacter();
+    fadeAudio(explorerAudio, 0, 800, null);
+    fadeAudio(rainAudio, 0, 800, null);
+    winningAudio.currentTime = 0;
+    winningAudio.volume = 0;
+    winningAudio.play().catch(() => {});
+    fadeAudio(winningAudio, 1, 800, null);
   }
 }
 
@@ -1628,6 +1640,10 @@ introAudio.loop = true;
 
 const pustAudio = new Audio('public/pust.wav');
 const bieStikkAudio = new Audio('public/bieStikk.wav');
+const winningAudio = new Audio('public/winning.wav');
+winningAudio.loop = true;
+const loosingAudio = new Audio('public/loosing.wav');
+loosingAudio.loop = true;
 
 function playBieStikk() {
   bieStikkAudio.currentTime = 0;
@@ -1693,6 +1709,14 @@ function fadeOutExplorerToIntro() {
   fadeAudio(rainAudio, 0, 700, () => {
     rainAudio.pause();
     rainAudio.currentTime = 0;
+  });
+  fadeAudio(winningAudio, 0, 700, () => {
+    winningAudio.pause();
+    winningAudio.currentTime = 0;
+  });
+  fadeAudio(loosingAudio, 0, 700, () => {
+    loosingAudio.pause();
+    loosingAudio.currentTime = 0;
   });
 }
 
