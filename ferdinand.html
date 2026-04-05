@@ -307,9 +307,52 @@
 
     #gameover-retry-btn:hover { background: #3a4e3a; transform: translateY(-2px); }
     #gameover-retry-btn:active { transform: translateY(0); }
+
+    #click-to-start {
+      position: fixed;
+      inset: 0;
+      background: #0a1a06;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      cursor: pointer;
+    }
+
+    #click-to-start .inner {
+      text-align: center;
+      font-family: monospace;
+      color: #70b840;
+      user-select: none;
+    }
+
+    #click-to-start h1 {
+      font-size: 2.6rem;
+      letter-spacing: 4px;
+      text-shadow: 2px 2px 0 #2c4d18;
+      margin-bottom: 20px;
+    }
+
+    #click-to-start p {
+      font-size: 1rem;
+      color: #a0c870;
+      animation: blink 1.2s step-start infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
   </style>
 </head>
 <body>
+<div id="click-to-start">
+  <div class="inner">
+    <h1>Ferdinand</h1>
+    <p>Klikk for å starte</p>
+  </div>
+</div>
+
 <canvas id="game"></canvas>
 <button id="menu-btn">Avslutt</button>
 
@@ -1569,7 +1612,29 @@ for (let i = 0; i < 12; i++) {
 const overlay = document.getElementById('modal-overlay');
 const menuBtn = document.getElementById('menu-btn');
 
+// ─── Intro music ─────────────────────────────────────────────────────────────
+const introAudio = new Audio('public/intro.wav');
+introAudio.loop = true;
+
+function playIntro() {
+  introAudio.currentTime = 0;
+  introAudio.play().catch(() => {});
+}
+
+function stopIntro() {
+  introAudio.pause();
+  introAudio.currentTime = 0;
+}
+
+// "Klikk for å starte"-skjerm sikrer at lyd alltid kan spilles
+const clickToStart = document.getElementById('click-to-start');
+clickToStart.addEventListener('click', () => {
+  clickToStart.style.display = 'none';
+  playIntro();
+}, { once: true });
+
 document.getElementById('start-btn').addEventListener('click', () => {
+  stopIntro();
   overlay.style.display = 'none';
   menuBtn.style.display = 'block';
   gamePaused = false;
@@ -1626,6 +1691,7 @@ document.getElementById('confirm-yes').addEventListener('click', () => {
   }
 
   overlay.style.display = 'flex';
+  playIntro();
 });
 
 function resetGame() {
@@ -1655,6 +1721,7 @@ document.getElementById('gameover-retry-btn').addEventListener('click', () => {
   menuBtn.style.display = 'none';
   resetGame();
   overlay.style.display = 'flex';
+  playIntro();
 });
 
 document.getElementById('win-replay-btn').addEventListener('click', () => {
@@ -1662,6 +1729,7 @@ document.getElementById('win-replay-btn').addEventListener('click', () => {
   menuBtn.style.display = 'none';
   resetGame();
   overlay.style.display = 'flex';
+  playIntro();
 });
 </script>
 </body>
