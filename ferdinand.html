@@ -637,6 +637,8 @@ function trySmell() {
       } else {
         lives = Math.min(20, lives + 0.25);
         floats.push({ x: f.x, y: f.y - 30, text: SMELL_WORDS[Math.floor(Math.random() * SMELL_WORDS.length)], life: 1 });
+        pustAudio.currentTime = 0;
+        pustAudio.play().catch(() => {});
       }
       return; // smell one at a time
     }
@@ -1620,6 +1622,8 @@ const menuBtn = document.getElementById('menu-btn');
 // ─── Music ───────────────────────────────────────────────────────────────────
 const introAudio = new Audio('public/intro.wav');
 introAudio.loop = true;
+
+const pustAudio = new Audio('public/pust.wav');
 
 const explorerAudio = new Audio('public/explorer.wav');
 explorerAudio.loop = true;
