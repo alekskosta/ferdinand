@@ -764,6 +764,9 @@ function update() {
       weather = 'warning';
       weatherTimer = 120;
       thunderFlash = 8;
+      rainAudio.volume = 1;
+      rainAudio.play().catch(() => {});
+      fadeAudio(explorerAudio, 0, 1500, null);
     } else if (weather === 'warning') {
       weather = 'rain';
       weatherTimer = 900 + Math.floor(Math.random() * 900);
@@ -771,6 +774,8 @@ function update() {
     } else {
       weather = 'clear';
       weatherTimer = 1400 + Math.floor(Math.random() * 1400);
+      fadeAudio(rainAudio, 0, 1500, () => { rainAudio.pause(); rainAudio.currentTime = 0; });
+      fadeAudio(explorerAudio, 1, 1500, null);
     }
   }
 
@@ -1620,6 +1625,10 @@ const explorerAudio = new Audio('public/explorer.wav');
 explorerAudio.loop = true;
 explorerAudio.volume = 0;
 
+const rainAudio = new Audio('public/rain.wav');
+rainAudio.loop = true;
+rainAudio.volume = 0;
+
 function fadeAudio(audio, targetVol, duration, onDone) {
   const steps = 40;
   const interval = duration / steps;
@@ -1667,6 +1676,10 @@ function fadeOutExplorerToIntro() {
   fadeAudio(explorerAudio, 0, 700, () => {
     explorerAudio.pause();
     explorerAudio.currentTime = 0;
+  });
+  fadeAudio(rainAudio, 0, 700, () => {
+    rainAudio.pause();
+    rainAudio.currentTime = 0;
   });
 }
 
