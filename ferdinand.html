@@ -633,6 +633,7 @@ function trySmell() {
       }
       if (f.dirty) {
         lives = Math.max(0, lives - 0.25);
+        playBieStikk();
         floats.push({ x: f.x, y: f.y - 30, text: ['Pøøøh!', 'Bleæsj!', 'Æsj!'][Math.floor(Math.random() * 3)], life: 1 });
       } else {
         lives = Math.min(20, lives + 0.25);
@@ -751,6 +752,7 @@ function update() {
     b.y = Math.max(T, Math.min((H-1)*T, b.y));
     if (dist(player.x, player.y, b.x, b.y) < 28) {
       lives = Math.max(0, lives - 0.25);
+      playBieStikk();
       floats.push({ x: b.x, y: b.y - 20, text: 'Au!', life: 1 });
       b.x = -9999; // remove by pushing offscreen, filtered below
     }
@@ -799,6 +801,7 @@ function update() {
       const sheltered = trees.some(t => dist(player.x, player.y, t.x, t.y) < 55);
       if (!sheltered) {
         lives = Math.max(0, lives - 0.25);
+        playBieStikk();
         floats.push({ x: player.x, y: player.y - 30, text: 'Brr!', life: 1 });
       }
     }
@@ -1624,6 +1627,12 @@ const introAudio = new Audio('public/intro.wav');
 introAudio.loop = true;
 
 const pustAudio = new Audio('public/pust.wav');
+const bieStikkAudio = new Audio('public/bieStikk.wav');
+
+function playBieStikk() {
+  bieStikkAudio.currentTime = 0;
+  bieStikkAudio.play().catch(() => {});
+}
 
 const explorerAudio = new Audio('public/explorer.wav');
 explorerAudio.loop = true;
